@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微信点餐系统</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .menu-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .item-info {
+            flex: 1;
+        }
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+        }
+        button {
+            padding: 5px 15px;
+            margin: 0 5px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        #order-summary {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h2>菜单列表</h2>
+    <div id="menu"></div>
+    
+    <h2>订单信息</h2>
+    <div id="order-summary"></div>
+    <button onclick="submitOrder()">提交订单到微信群</button>
+
+    <script>
+        // 菜单数据
+        const menuItems = [
+            { id: 1, name: "鱼香肉丝", price: 28 },
+            { id: 2, name: "宫保鸡丁", price: 32 },
+            { id: 3, name: "麻婆豆腐", price: 22 },
+            { id: 4, name: "回锅肉", price: 35 }
+        ];
+
+        // 初始化购物车
+        let cart = {};
+
+        // 初始化菜单
+        function initMenu() {
+            const menuContainer = document.getElementById('menu');
+            menuItems.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'menu-item';
+                div.innerHTML = `
+                    <div class="item-info">
+                        <h3>${item.name}</h3>
+                        <p>价格：¥${item.price}</p >
+                    </div>
+                    <div class="quantity-controls">
+                        <button onclick="changeQuantity(${item.id}, -1)">-</button>
+                        <span id="quantity-${item.id}">0</span>
+                        <button onclick="changeQuantity(${item.id}, 1)">+</button>
+                    </div>
+                `;
+                menuContainer.appendChild(div);
+                cart[item.id] = 0;
+            });
+        }
+
+        // 修改数量
+        function changeQuantity(itemId, delta) {
+            const newQuantity = cart[itemId] + delta;
+            if (newQuantity >= 0) {
+                cart[itemId] = newQuantity;
+                document.getElementById(`quantity-${itemId}`).textContent = newQuantity;
+                updateOrderSummary();
+            }
+        }
+
+        // 更新订单摘要
+        function updateOrderSummary() {
+            const summary = document.getElementById('order-summary');
+            let total = 0;
+            let items = [];
+            
+            menuItems.forEach(item => {
+                if (cart[item.id] > 0) {
+                    const subtotal = item.price * cart[item.id];
+                    total += subtotal;
+                    items.push(`${item.name} x${cart[item.id]} ￥${subtotal}`);
+                }
+            });
+
+            summary.innerHTML = items.join('<br>') + `<br><strong>总价：￥${total}</strong>`;
+        }
+
+        // 提交订单
+        function submitOrder() {
+            let orderText = "【新订单】\n";
+            let total = 0;
+            
+            menuItems.forEach(item => {
+                if (cart[item.id] > 0) {
+                    const subtotal = item.price * cart[item.id];
+                    total += subtotal;
+                    orderText += `${item.name} x${cart[item.id]} ￥${subtotal}\n`;
+                }
+            });
+
+            orderText += `总计：￥${total}\n`;
+            orderText += `请将订单复制到微信群中`;
+
+            // 复制到剪贴板
+            navigator.clipboard.writeText(orderText).then(() => {
+                alert("订单已复制到剪贴板，请粘贴到微信群！");
+            }).catch(err => {
+                alert("复制失败，请手动复制以下内容：\n\n" + orderText);
+            });
+        }
+
+        // 初始化
+        initMenu();
+    </script>
+</body>
+</html>
